@@ -22,8 +22,10 @@ public class PluginUpdater {
 	public static void main(String[] args){
 		downloadPluginUpdates(null);
 	}
-	
+
 	public static void downloadPluginUpdates(final JavaPlugin plugin) {
+		if (isWindows()) /// I can't make this work with windows yet
+			return;
 		Bukkit.getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable(){
 			@Override
 			public void run() {
@@ -33,9 +35,36 @@ public class PluginUpdater {
 				File dir = plugin.getDataFolder();
 				FileVersion fv = getGreatestVersion(plugin);
 
-				downloadPluginUpdates(pname,curVersion,dir, fv);				
+				downloadPluginUpdates(pname,curVersion,dir, fv);
 			}
 		});
+	}
+
+	public static void updatePlugin(JavaPlugin plugin) {
+		if (isWindows())
+			return;
+
+		FileVersion fv = getGreatestVersion(plugin);
+		if (fv == null)
+			return;
+		File jarFile = new File("plugins/"+plugin.getName()+".jar");
+
+		try {
+			if (renameFile(fv.file, jarFile)){
+				warn("[PluginUpdater] "+ plugin.getName() +" updated to " + fv.version);
+				File updateDir = getUpdateDir(plugin.getDataFolder());
+				deleteDir(updateDir);
+			} else {
+				err("[PluginUpdater] Couldnt rename "+fv.file+" to " + jarFile.getAbsolutePath());
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private static boolean isWindows() {
+		return System.getProperty("os.name").toUpperCase().contains("WINDOWS");
 	}
 
 	private static void downloadPluginUpdates(String pname, Version curVersion, File dir, FileVersion mostRecentDownload){
@@ -43,7 +72,7 @@ public class PluginUpdater {
 		final String fileURL = bukkitURL+"server-mods/"+pname.toLowerCase()+"/files/";
 		final int readTimeout = 5000;
 		final int conTimeout = 7000;
-		info("Plugin updater checking for updates for " + pname +" v" + curVersion);
+		info("[PluginUpdater] checking for updates for " + pname +" v" + curVersion);
 		Version greatest = curVersion;
 		String downloadLink = null;
 		String line = null;
@@ -58,16 +87,20 @@ public class PluginUpdater {
 			while ((line = br.readLine())!= null){
 				Matcher matcher = pattern.matcher(line);
 				if (!matcher.find()){
-					continue;}				
+					continue;}
 				Matcher matcher2 = pattern2.matcher(line);
 				line = line.replaceAll(matcher.group(), "");
 				if (!matcher2.find()){
 					continue;}
-				Version v = new Version(matcher2.group(2));
+				String sv = matcher2.group(2);
+				sv = sv.replaceFirst("^v", "");
+				sv = sv.replaceFirst("^V", "");
+
+				Version v = new Version(sv);
 				if (v.compareTo(greatest) <= 0){
 					continue;}
 				greatest = v;
-				downloadLink = bukkitURL + matcher.group(1);				
+				downloadLink = bukkitURL + matcher.group(1);
 			}
 		} catch (Exception e) {
 			return; /// Couldn't find updates
@@ -76,9 +109,9 @@ public class PluginUpdater {
 			return;}
 
 		if (mostRecentDownload != null && mostRecentDownload.version.compareTo(greatest) >= 0){
-//			System.out.println(mostRecentDownload +" ########### " + mostRecentDownload.version.compareTo(greatest));
+			//			System.out.println(mostRecentDownload +" ########### " + mostRecentDownload.version.compareTo(greatest));
 			return;} /// we already have downloaded a version that is equal or better
-		info(pname +" found more recent version " + greatest);
+		info("[PluginUpdater] " + pname +" found more recent version " + greatest);
 		try {
 			final URLConnection connection = new URL(downloadLink).openConnection();
 			connection.setConnectTimeout(conTimeout);
@@ -94,7 +127,7 @@ public class PluginUpdater {
 				}
 			}
 			if (downloadLink != null){
-				warn(pname+" downloading version " + greatest.getVersion());
+				warn("[PluginUpdater] " + pname+" downloading version " + greatest.getVersion());
 				File updateDir = getUpdateDir(new File(dir.getAbsolutePath()));
 				if (!updateDir.exists())
 					updateDir.mkdir();
@@ -106,7 +139,7 @@ public class PluginUpdater {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		}		
+		}
 	}
 
 	private static File getUpdateDir(File file) {
@@ -132,7 +165,7 @@ public class PluginUpdater {
 				fout.close();
 		}
 	}
-	
+
 	public static class FileVersion{
 		File file;
 		Version version;
@@ -140,6 +173,7 @@ public class PluginUpdater {
 			this.file = file;
 			this.version = version;
 		}
+		@Override
 		public String toString(){
 			return file.getPath()+"  version="+version;
 		}
@@ -152,165 +186,57 @@ public class PluginUpdater {
 			return null;
 		String strversion = null;
 		FileVersion fv = new FileVersion(updateDir,curVersion);
-		
+
 		FileVersion greatest = fv;
 		for (String file: updateDir.list()){
 			strversion = file.replace(".jar", "");
 			String split[] = strversion.split("_");
 			if (split.length == 0)
 				continue;
-//			System.out.println("FFFFFFFFFFFFFFFFFFFFFFFFF = " + file);
-			Version fileVersion = new Version(split[split.length-1].trim());
+			String sv = split[split.length-1].trim();
+			sv = sv.replaceFirst("^v", "");
+			sv = sv.replaceFirst("^V", "");
+			Version fileVersion = new Version(sv);
 			if (fileVersion.compareTo(greatest.version) > 0){
 				File f = new File(updateDir.getPath()+"/"+file);
-//				System.out.println("################################### " + f);
 				greatest = new FileVersion(f, fileVersion);
 			}
 		}
-//		System.out.println("GREATEST === " + greatest);
 		return greatest == fv ? null : greatest;
 	}
-	
-	public static void updatePlugin(JavaPlugin plugin) {
-		FileVersion fv = getGreatestVersion(plugin);
-		if (fv == null)
-			return;
-		File jarFile = new File("plugins/"+plugin.getName()+".jar");
-//		System.out.println("#!!!!!!!!!!!!!!!!!!!!!!!  " + fv.file.getPath() +"   " + jarFile.getPath());
-//		System.out.println("#!!!!!!!!!!!!!!!!!!!!!!!  " + fv.file.getAbsolutePath() +"   " + jarFile.getAbsolutePath());
+
+
+
+	public static boolean renameFile(File sourceFile, File destFile) throws IOException {
+		if(!destFile.exists()) {
+			destFile.createNewFile();
+		}
+
+		FileChannel source = null;
+		FileChannel destination = null;
 
 		try {
-			if (renameFile(fv.file, jarFile)){
-				warn(plugin.getName() +" updated to " + fv.version);
-				File updateDir = getUpdateDir(plugin.getDataFolder());
-				deleteDir(updateDir);
-			} else {
-				err("Couldnt rename "+fv.file+" to " + jarFile.getAbsolutePath());
+			if (destFile.exists()){
+				if (!destFile.delete()){
+					return false;
+				}
 			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
+			source = new FileInputStream(sourceFile).getChannel();
+			destination = new FileOutputStream(destFile).getChannel();
+			destination.transferFrom(source, 0, source.size());
+		} catch(Exception e){
 			e.printStackTrace();
+			return false;
 		}
-	}
-//	public static boolean renameFile(File src, File dest){
-//		Random r = new Random();
-//		File temp = new File(src.getAbsolutePath()+"__"+r.nextInt());
-//		System.out.println("######## " + temp.getPath());
-//		if (!dest.renameTo(temp))
-//			return false;
-//		System.out.println("########2 " + src.getPath() +"   " + dest.getPath());
-//		if (!src.renameTo(dest)){
-//			temp.renameTo(dest);
-//		}
-//		
-//		return true;
-//	}
-	
-//	public static boolean renameFile(File srcFile, File destFile) throws IOException {
-//	    boolean bSucceeded = false;
-//	    try {
-//	        if (destFile.exists()) {
-//	            if (!destFile.delete()) {
-//	                throw new IOException(srcFile.getName() + " was not successfully renamed to " + destFile.getName()); 
-//	            }
-//	        }
-//	        if (!srcFile.renameTo(destFile))        {
-//	            throw new IOException(srcFile.getName() + " was not successfully renamed to " + destFile.getName());
-//	        } else {
-//	                bSucceeded = true;
-//	        }
-//	    } finally {
-//	          if (bSucceeded) {
-//	                srcFile.delete();
-//	          }
-//	    }
-//	    return bSucceeded;
-//	}
-
-//	public static boolean renameFile(String oldName, String newName) throws IOException {
-//	    File srcFile = new File(oldName);
-//	    boolean bSucceeded = false;
-//	    try {
-//	        File destFile = new File(newName);
-//	        if (destFile.exists()) {
-//	            if (!destFile.delete()) {
-//	                throw new IOException(oldName + " was not successfully renamed to " + newName); 
-//	            }
-//	        }
-//	        if (!srcFile.renameTo(destFile))        {
-//	            throw new IOException(oldName + " was not successfully renamed to " + newName);
-//	        } else {
-//	                bSucceeded = true;
-//	        }
-//	    } finally {
-//	          if (bSucceeded) {
-//	                srcFile.delete();
-//	          }
-//	    }
-//	    return bSucceeded;
-//	}
-//	public static boolean renameFile(File src, File dest){
-//		InputStream inputStream = null;
-//		try {
-//			inputStream = new FileInputStream(src);
-//		} catch (FileNotFoundException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
-//		if (inputStream == null){
-//			return false;
-//		}
-//		OutputStream out = null;
-//		try{
-//			out=new FileOutputStream(dest);
-//			byte buf[]=new byte[1024];
-//			int len;
-//			while((len=inputStream.read(buf))>0){
-//				out.write(buf,0,len);}
-//		} catch (Exception e){
-//			e.printStackTrace();
-//			return false;
-//		} finally{
-//			if (out != null)
-//				try {out.close();} catch (IOException e) {}
-//			if (inputStream!=null) 
-//				try {inputStream.close();} catch (IOException e) {}
-//		}
-//		return true;
-//
-//	}
-	
-	public static boolean renameFile(File sourceFile, File destFile) throws IOException {
-	    if(!destFile.exists()) {
-	        destFile.createNewFile();
-	    }
-
-	    FileChannel source = null;
-	    FileChannel destination = null;
-
-	    try {
-	        if (destFile.exists()){
-	        	if (!destFile.delete()){
-//	        		System.err.println("EEEEEEEEEEEEE coudlnt delete!!!");
-	        		return false;
-	        	}
-	        }
-	        source = new FileInputStream(sourceFile).getChannel();
-	        destination = new FileOutputStream(destFile).getChannel();
-	        destination.transferFrom(source, 0, source.size());
-	    } catch(Exception e){
-	    	e.printStackTrace();
-	    	return false;
-	    }
-	    finally {
-	        if(source != null) {
-	            source.close();
-	        }
-	        if(destination != null) {
-	            destination.close();
-	        }
-	    }
-	    return true;
+		finally {
+			if(source != null) {
+				source.close();
+			}
+			if(destination != null) {
+				destination.close();
+			}
+		}
+		return true;
 	}
 
 	public static boolean deleteDir(File dir) {
