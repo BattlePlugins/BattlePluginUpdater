@@ -8,10 +8,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,10 +19,26 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class PluginUpdater {
-	public static void main(String[] args){
-		downloadPluginUpdates(null);
+	/**
+	 * Returns the uri and version of a newer version of the given plugin.
+	 * If there is no newer version returns false.
+	 * To not block the server this should be called in an async thread
+	 * @param plugin
+	 * @return URIVersion
+	 */
+	public static URIVersion hasPluginUpdates(final JavaPlugin plugin){
+		String strversion = plugin.getDescription().getVersion();
+		Version curVersion = new Version(strversion);
+		String pname = plugin.getName();
+		URIVersion fv = getGreatestLocalVersion(plugin);
+		URIVersion update = getPluginUpdate(pname,curVersion, fv);
+		return update;
 	}
 
+	/**
+	 * Download any updates for the given plugin
+	 * @param plugin
+	 */
 	public static void downloadPluginUpdates(final JavaPlugin plugin) {
 		if (isWindows()) /// I can't make this work with windows yet
 			return;
@@ -33,29 +49,33 @@ public class PluginUpdater {
 				Version curVersion = new Version(strversion);
 				String pname = plugin.getName();
 				File dir = plugin.getDataFolder();
-				FileVersion fv = getGreatestVersion(plugin);
+				URIVersion fv = getGreatestLocalVersion(plugin);
 
 				downloadPluginUpdates(pname,curVersion,dir, fv);
 			}
 		});
 	}
 
+	/**
+	 * Update the given plugin
+	 * @param plugin
+	 */
 	public static void updatePlugin(JavaPlugin plugin) {
 		if (isWindows())
 			return;
 
-		FileVersion fv = getGreatestVersion(plugin);
+		URIVersion fv = getGreatestLocalVersion(plugin);
 		if (fv == null)
 			return;
 		File jarFile = new File("plugins/"+plugin.getName()+".jar");
 
 		try {
-			if (renameFile(fv.file, jarFile)){
+			if (renameFile(new File(fv.uri), jarFile)){
 				warn("[PluginUpdater] "+ plugin.getName() +" updated to " + fv.version);
 				File updateDir = getUpdateDir(plugin.getDataFolder());
 				deleteDir(updateDir);
 			} else {
-				err("[PluginUpdater] Couldnt rename "+fv.file+" to " + jarFile.getAbsolutePath());
+				err("[PluginUpdater] Couldnt rename "+fv.uri+" to " + jarFile.getAbsolutePath());
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -67,7 +87,25 @@ public class PluginUpdater {
 		return System.getProperty("os.name").toUpperCase().contains("WINDOWS");
 	}
 
-	private static void downloadPluginUpdates(String pname, Version curVersion, File dir, FileVersion mostRecentDownload){
+	private static void downloadPluginUpdates(String pname, Version curVersion, File dir, URIVersion mostRecentDownload){
+		try {
+			URIVersion fv = getPluginUpdate(pname,curVersion, mostRecentDownload);
+			if (fv != null){
+				warn("[PluginUpdater] " + pname+" downloading version " + fv.version.getVersion());
+				File updateDir = getUpdateDir(new File(dir.getAbsolutePath()));
+				if (!updateDir.exists())
+					updateDir.mkdir();
+
+				String fname = updateDir.getAbsolutePath() +"/"+pname+"_"+fv.version.getVersion();
+				File saveFile = new File(fname+".dl");
+				saveUrl(saveFile.getCanonicalPath(),fv.uri.toString());
+				saveFile.renameTo(new File(fname+".jar"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	private static URIVersion getPluginUpdate(String pname, Version curVersion, URIVersion mostRecentDownload){
 		final String bukkitURL = "http://dev.bukkit.org/";
 		final String fileURL = bukkitURL+"server-mods/"+pname.toLowerCase()+"/files/";
 		final int readTimeout = 5000;
@@ -76,6 +114,7 @@ public class PluginUpdater {
 		Version greatest = curVersion;
 		String downloadLink = null;
 		String line = null;
+
 		try {
 			final URLConnection connection = new URL(fileURL).openConnection();
 			connection.setConnectTimeout(conTimeout);
@@ -103,14 +142,14 @@ public class PluginUpdater {
 				downloadLink = bukkitURL + matcher.group(1);
 			}
 		} catch (Exception e) {
-			return; /// Couldn't find updates
+			return null; /// Couldn't find updates
 		}
 		if (greatest == curVersion){ /// No update needed
-			return;}
+			return null;}
 
 		if (mostRecentDownload != null && mostRecentDownload.version.compareTo(greatest) >= 0){
 			//			System.out.println(mostRecentDownload +" ########### " + mostRecentDownload.version.compareTo(greatest));
-			return;} /// we already have downloaded a version that is equal or better
+			return null;} /// we already have downloaded a version that is equal or better
 		info("[PluginUpdater] " + pname +" found more recent version " + greatest);
 		try {
 			final URLConnection connection = new URL(downloadLink).openConnection();
@@ -127,19 +166,12 @@ public class PluginUpdater {
 				}
 			}
 			if (downloadLink != null){
-				warn("[PluginUpdater] " + pname+" downloading version " + greatest.getVersion());
-				File updateDir = getUpdateDir(new File(dir.getAbsolutePath()));
-				if (!updateDir.exists())
-					updateDir.mkdir();
-
-				String fname = updateDir.getAbsolutePath() +"/"+pname+"_"+greatest.getVersion();
-				File saveFile = new File(fname+".dl");
-				saveUrl(saveFile.getCanonicalPath(),downloadLink);
-				saveFile.renameTo(new File(fname+".jar"));
+				return new URIVersion(new URI(downloadLink), greatest);
 			}
-		} catch (Exception e) {
+		} catch (Exception e){
 			e.printStackTrace();
 		}
+		return null;
 	}
 
 	private static File getUpdateDir(File file) {
@@ -166,28 +198,30 @@ public class PluginUpdater {
 		}
 	}
 
-	public static class FileVersion{
-		File file;
+	public static class URIVersion{
+		URI uri;
 		Version version;
-		public FileVersion(File file, Version version){
-			this.file = file;
+		public URIVersion(URI uri, Version version){
+			this.uri = uri;
 			this.version = version;
 		}
 		@Override
 		public String toString(){
-			return file.getPath()+"  version="+version;
+			return uri.getPath()+"  version="+version;
 		}
 	}
 
-	private static FileVersion getGreatestVersion(JavaPlugin plugin){
-		Version curVersion = new Version(plugin.getDescription().getVersion());
-		File updateDir = getUpdateDir(plugin.getDataFolder());
+	private static URIVersion getGreatestLocalVersion(JavaPlugin plugin){
+		return getGreatestLocalVersion(new Version(plugin.getDescription().getVersion()),
+				getUpdateDir(plugin.getDataFolder()) );
+	}
+	private static URIVersion getGreatestLocalVersion(Version curVersion, File updateDir){
 		if (!updateDir.exists())
 			return null;
 		String strversion = null;
-		FileVersion fv = new FileVersion(updateDir,curVersion);
-
-		FileVersion greatest = fv;
+		URIVersion fv = new URIVersion(updateDir.toURI(),curVersion);
+		System.out.println("##########   " + updateDir.getPath());
+		URIVersion greatest = fv;
 		for (String file: updateDir.list()){
 			strversion = file.replace(".jar", "");
 			String split[] = strversion.split("_");
@@ -197,9 +231,10 @@ public class PluginUpdater {
 			sv = sv.replaceFirst("^v", "");
 			sv = sv.replaceFirst("^V", "");
 			Version fileVersion = new Version(sv);
+			System.out.println("LDKFDKK   " + fileVersion);
 			if (fileVersion.compareTo(greatest.version) > 0){
 				File f = new File(updateDir.getPath()+"/"+file);
-				greatest = new FileVersion(f, fileVersion);
+				greatest = new URIVersion(f.toURI(), fileVersion);
 			}
 		}
 		return greatest == fv ? null : greatest;
@@ -252,27 +287,12 @@ public class PluginUpdater {
 		return dir.delete();
 	}
 	public static void info(String msg){
-		Logger log = Bukkit.getLogger();
-		if (log != null){
-			log.info(msg);
-		} else {
-			System.out.println(msg);
-		}
+		System.out.println(msg);
 	}
 	public static void warn(String msg){
-		Logger log = Bukkit.getLogger();
-		if (log != null){
-			log.warning(msg);
-		} else {
-			System.out.println(msg);
-		}
+		System.out.println(msg);
 	}
 	public static void err(String msg){
-		Logger log = Bukkit.getLogger();
-		if (log != null){
-			log.severe(msg);
-		} else {
-			System.err.println(msg);
-		}
+		System.err.println(msg);
 	}
 }
