@@ -40,8 +40,6 @@ public class PluginUpdater {
 	 * @param plugin
 	 */
 	public static void downloadPluginUpdates(final JavaPlugin plugin) {
-		if (isWindows()) /// I can't make this work with windows yet
-			return;
 		Bukkit.getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable(){
 			@Override
 			public void run() {
@@ -61,13 +59,14 @@ public class PluginUpdater {
 	 * @param plugin
 	 */
 	public static void updatePlugin(JavaPlugin plugin) {
-		if (isWindows())
-			return;
-
 		URIVersion fv = getGreatestLocalVersion(plugin);
 		if (fv == null)
 			return;
-		File jarFile = new File("plugins/"+plugin.getName()+".jar");
+		File bukkitUpdateDir = Bukkit.getUpdateFolderFile();
+		if (!bukkitUpdateDir.exists()){
+			bukkitUpdateDir.mkdir();}
+
+		File jarFile = new File(bukkitUpdateDir.getAbsolutePath()+"/"+plugin.getName()+".jar");
 
 		try {
 			if (renameFile(new File(fv.uri), jarFile)){
@@ -78,12 +77,11 @@ public class PluginUpdater {
 				err("[PluginUpdater] Couldnt rename "+fv.uri+" to " + jarFile.getAbsolutePath());
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	private static boolean isWindows() {
+	public static boolean isWindows() {
 		return System.getProperty("os.name").toUpperCase().contains("WINDOWS");
 	}
 
