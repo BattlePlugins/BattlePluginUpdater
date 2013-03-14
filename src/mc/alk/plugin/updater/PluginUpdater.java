@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -108,7 +109,7 @@ public class PluginUpdater {
 		final String fileURL = bukkitURL+"server-mods/"+pname.toLowerCase()+"/files/";
 		final int readTimeout = 5000;
 		final int conTimeout = 7000;
-		info("[PluginUpdater] checking for updates for " + pname +" v" + curVersion);
+		info("[PluginUpdater] "+pname +" v" + curVersion+" checking for updates");
 		Version greatest = curVersion;
 		String downloadLink = null;
 		String line = null;
@@ -210,15 +211,15 @@ public class PluginUpdater {
 	}
 
 	private static URIVersion getGreatestLocalVersion(JavaPlugin plugin){
-		return getGreatestLocalVersion(new Version(plugin.getDescription().getVersion()),
+		return getGreatestLocalVersion(plugin.getClass(), new Version(plugin.getDescription().getVersion()),
 				getUpdateDir(plugin.getDataFolder()) );
 	}
-	private static URIVersion getGreatestLocalVersion(Version curVersion, File updateDir){
+
+	private static URIVersion getGreatestLocalVersion(Class<?> clazz, Version curVersion, File updateDir){
 		if (!updateDir.exists())
 			return null;
 		String strversion = null;
 		URIVersion fv = new URIVersion(updateDir.toURI(),curVersion);
-		System.out.println("##########   " + updateDir.getPath());
 		URIVersion greatest = fv;
 		for (String file: updateDir.list()){
 			strversion = file.replace(".jar", "");
@@ -228,11 +229,12 @@ public class PluginUpdater {
 			String sv = split[split.length-1].trim();
 			sv = sv.replaceFirst("^v", "");
 			sv = sv.replaceFirst("^V", "");
-			Version fileVersion = new Version(sv);
-			System.out.println("LDKFDKK   " + fileVersion);
-			if (fileVersion.compareTo(greatest.version) > 0){
+//			Version fileVersion = new Version(sv);
+			Version jarVersion = findJarVersion(clazz, new File(updateDir+"/"+file));
+
+			if (jarVersion.compareTo(greatest.version) > 0){
 				File f = new File(updateDir.getPath()+"/"+file);
-				greatest = new URIVersion(f.toURI(), fileVersion);
+				greatest = new URIVersion(f.toURI(), jarVersion);
 			}
 		}
 		return greatest == fv ? null : greatest;
@@ -292,5 +294,28 @@ public class PluginUpdater {
 	}
 	public static void err(String msg){
 		System.err.println(msg);
+	}
+
+	public static Version findJarVersion(Class<?> clazz, File file) {
+		Version version = null;
+		try{
+			URL url = new URL("jar:file:"+file.getAbsolutePath()+"!/plugin.yml");
+			InputStream inputStream = url.openStream();
+			if (inputStream== null)
+				return null;
+			BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+			String line = null;
+			while ((line = br.readLine())!=null){
+				if (!line.contains("version:")){
+					continue;}
+				String[] split = line.split(":");
+				if (split.length==2){
+					return new Version(split[1]);}
+			}
+			inputStream.close();
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+		return version;
 	}
 }

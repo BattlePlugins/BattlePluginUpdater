@@ -27,7 +27,7 @@ public class FileUpdater {
 		CONTAINS, MATCHES
 	}
 	public static enum UpdateType{
-		ADDAFTER, REPLACE, DELETE
+		ADDAFTER, REPLACE, DELETE, DELETEALLFROM
 	}
 
 	public static class Update{
@@ -51,19 +51,27 @@ public class FileUpdater {
 		this.updateVersion = newVersion;
 		this.oldVersion = oldVersion;
 	}
+
 	public void delete(String str){
 		updates.put(str, new Update(str,UpdateType.DELETE, SearchType.MATCHES, ""));
 	}
+
 	public void addAfter(String str, String...strings){
 		updates.put(str, new Update(str,UpdateType.ADDAFTER, SearchType.MATCHES, strings));
 	}
+
 	public void replace(String str, String...strings){
 		updates.put(str, new Update(str,UpdateType.REPLACE, SearchType.MATCHES, strings));
 	}
 
-	public Version update(){
+	public void deleteAllFrom(String str){
+		updates.put(str, new Update(str,UpdateType.DELETEALLFROM, SearchType.MATCHES,""));
+	}
+
+	public Version update() throws IOException {
 		System.out.println("[Plugin Updater] updating " + oldFile.getName() +" from "+ oldVersion+" to " + updateVersion);
 		System.out.println("[Plugin Updater] old version backup inside of " + backupDir.getAbsolutePath());
+
 		BufferedReader br = null;
 		BufferedWriter fw = null;
 		File tempFile = null;
@@ -83,9 +91,10 @@ public class FileUpdater {
 			return null;
 		}
 
+		boolean quit = false;
 		String line =null;
 		try {
-			while ((line = br.readLine()) != null){
+			while ((line = br.readLine()) != null && !quit){
 				boolean foundMatch = false;
 				for (Entry<String,Update> entry : updates.entrySet()){
 					Update up = entry.getValue();
@@ -97,6 +106,11 @@ public class FileUpdater {
 					case CONTAINS:
 						if (!line.contains(up.search)){
 							continue;}
+						break;
+					}
+					if (up.type == UpdateType.DELETEALLFROM){
+						quit = true;
+						foundMatch = false; /// kludge to stop from writing
 						break;
 					}
 					if (up.type == UpdateType.ADDAFTER){ /// add back in the original search line
@@ -113,7 +127,7 @@ public class FileUpdater {
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally{
+		} finally {
 			try {br.close();} catch (Exception e) {}
 			try {fw.close();} catch (Exception e) {}
 		}
@@ -125,7 +139,9 @@ public class FileUpdater {
 		return renameTo(tempFile, oldFile) ? updateVersion : null;
 	}
 
-	private static boolean renameTo(File file1, File file2) {
+	public static boolean renameTo(File file1, File file2) throws IOException {
+		if (!file1.exists()){
+			throw new IOException(file1.getAbsolutePath()+" does not exist");}
 		/// That's right, I can't just rename the file, i need to move and delete
 		if (PluginUpdater.isWindows()){
 			File temp = new File(file2.getAbsoluteFile() +"."+new Random().nextInt()+".backup");
@@ -137,36 +153,57 @@ public class FileUpdater {
 				file2.delete();
 			}
 			if (!file1.renameTo(file2)){
-				System.err.println(temp.getName() +" could not be renamed to " + file2.getName());
-				return false;
+				throw new IOException(temp.getAbsolutePath() +" could not be renamed to " + file2.getAbsolutePath());
 			} else {
 				temp.delete();
-				return true;
 			}
 		} else {
 			if (!file1.renameTo(file2)){
-				System.err.println(file1.getName() +" could not be renamed to " + file2.getName());
-				return false;
+				throw new IOException(file1.getAbsolutePath() +" could not be renamed to " + file2.getAbsolutePath());
 			}
-			return true;
 		}
+		return true;
 	}
 
 
 	public void copy(File file1, File file2) {
+		InputStream inputStream = null;
+		OutputStream out= null;
 		try{
 			if (file2.exists()){
 				file2.delete();}
-			InputStream inputStream = new FileInputStream(file1);
-			OutputStream out=new FileOutputStream(file2);
+			inputStream = new FileInputStream(file1);
+			out=new FileOutputStream(file2);
 			byte buf[]=new byte[1024];
 			int len;
 			while((len=inputStream.read(buf))>0){
 				out.write(buf,0,len);}
-			out.close();
-			inputStream.close();
 		} catch (Exception e){
 			e.printStackTrace();
+		} finally{
+			try{ out.close();} catch (Exception e){}
+			try{ inputStream.close();} catch (Exception e){}
+		}
+	}
+
+	public static void deleteIfExists(File file) {
+		if (file.exists()){
+			file.delete();}
+	}
+
+	public static void makeIfNotExists(File file) {
+		if (!file.exists()){
+			file.mkdir();}
+	}
+
+	public static void moveIfExists(File file, File file2) {
+		if (file.exists()){
+			try {
+				FileUpdater.renameTo(file,file2);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			deleteIfExists(file);
 		}
 	}
 }
