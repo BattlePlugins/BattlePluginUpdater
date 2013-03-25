@@ -13,6 +13,8 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +43,7 @@ public class PluginUpdater {
 	 * @param plugin
 	 */
 	public static void downloadPluginUpdates(final JavaPlugin plugin) {
-		Bukkit.getScheduler().scheduleAsyncDelayedTask(plugin, new Runnable(){
+		new Timer().schedule(new TimerTask(){
 			@Override
 			public void run() {
 				String strversion = plugin.getDescription().getVersion();
@@ -52,7 +54,7 @@ public class PluginUpdater {
 
 				downloadPluginUpdates(pname,curVersion,dir, fv);
 			}
-		});
+		}, 0);
 	}
 
 	/**

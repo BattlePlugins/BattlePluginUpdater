@@ -27,7 +27,7 @@ public class FileUpdater {
 		CONTAINS, MATCHES
 	}
 	public static enum UpdateType{
-		ADDAFTER, REPLACE, DELETE, DELETEALLFROM
+		ADDAFTER, REPLACE, DELETE, DELETEALLFROM, ADDBEFORE
 	}
 
 	public static class Update{
@@ -58,6 +58,10 @@ public class FileUpdater {
 
 	public void addAfter(String str, String...strings){
 		updates.put(str, new Update(str,UpdateType.ADDAFTER, SearchType.MATCHES, strings));
+	}
+
+	public void addBefore(String str, String...strings){
+		updates.put(str, new Update(str,UpdateType.ADDBEFORE, SearchType.MATCHES, strings));
 	}
 
 	public void replace(String str, String...strings){
@@ -108,17 +112,23 @@ public class FileUpdater {
 							continue;}
 						break;
 					}
+					foundMatch = true;
 					if (up.type == UpdateType.DELETEALLFROM){
 						quit = true;
-						foundMatch = false; /// kludge to stop from writing
 						break;
 					}
-					if (up.type == UpdateType.ADDAFTER){ /// add back in the original search line
+
+					if (up.type == UpdateType.ADDAFTER){ /// add the original line before
 						fw.write(line+"\n");}
+
+					/// Add all the lines
 					if (up.type != UpdateType.DELETE)
 						for (String update: up.updates){
 							fw.write(update+"\n");}
-					foundMatch = true;
+
+					if (up.type == UpdateType.ADDBEFORE){ /// add original line after
+						fw.write(line+"\n");}
+
 					break;
 				}
 				if (!foundMatch){
