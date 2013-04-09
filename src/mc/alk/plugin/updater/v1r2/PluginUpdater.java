@@ -1,4 +1,4 @@
-package mc.alk.plugin.updater;
+package mc.alk.plugin.updater.v1r2;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;

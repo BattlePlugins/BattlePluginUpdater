@@ -1,4 +1,4 @@
-package mc.alk.plugin.updater;
+package mc.alk.plugin.updater.v1r2;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -44,6 +44,7 @@ public class FileUpdater {
 	}
 
 	HashMap<String, Update> updates = new HashMap<String, Update>();
+	HashMap<String, String> replaces = new HashMap<String, String>();
 
 	public FileUpdater(File oldFile, File backupDir, Version newVersion, Version oldVersion){
 		this.oldFile = oldFile.getAbsoluteFile();
@@ -70,6 +71,10 @@ public class FileUpdater {
 
 	public void deleteAllFrom(String str){
 		updates.put(str, new Update(str,UpdateType.DELETEALLFROM, SearchType.MATCHES,""));
+	}
+
+	public void replaceAll(String string, String string2) {
+		replaces.put(string, string2);
 	}
 
 	public Version update() throws IOException {
@@ -132,6 +137,9 @@ public class FileUpdater {
 					break;
 				}
 				if (!foundMatch){
+					for (Entry<String,String> rs : replaces.entrySet()){
+						line = line.replaceAll(rs.getKey(), rs.getValue());
+					}
 					fw.write(line+"\n");
 				}
 			}
@@ -216,4 +224,5 @@ public class FileUpdater {
 			deleteIfExists(file);
 		}
 	}
+
 }
