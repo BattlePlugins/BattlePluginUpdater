@@ -1,4 +1,4 @@
-package mc.alk.plugin.updater.v1r2;
+package mc.alk.plugin.updater.v1r4;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -161,7 +161,7 @@ public class FileUpdater {
 		if (!file1.exists()){
 			throw new IOException(file1.getAbsolutePath()+" does not exist");}
 		/// That's right, I can't just rename the file, i need to move and delete
-		if (PluginUpdater.isWindows()){
+		if (isWindows()){
 			File temp = new File(file2.getAbsoluteFile() +"."+new Random().nextInt()+".backup");
 			if (temp.exists()){
 				temp.delete();}
@@ -225,4 +225,7 @@ public class FileUpdater {
 		}
 	}
 
+    public static boolean isWindows() {
+        return System.getProperty("os.name").toUpperCase().contains("WINDOWS");
+    }
 }
