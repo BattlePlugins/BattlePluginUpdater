@@ -34,13 +34,30 @@ public class PluginUpdater {
             public void run() {
                 Updater up = new Updater(plugin, bukkitId, file, Updater.UpdateType.NO_DOWNLOAD, false);
                 Version curVersion = new Version(plugin.getDescription().getVersion());
-                Version remoteVersion = new Version(up.getLatestName().split("_v")[1]);
+                String name = up.getLatestName();
+                String strv;
+
+                if (name.contains("_v")){
+                    strv = name.split("_v")[1];
+                } else if (name.contains("_")){
+                    strv = name.split("_")[1];
+                } else {
+                    warn("&4[" + getNameAndVersion(plugin) + "] &ecan't find a version for &f" + up.getLatestName());
+                    return;
+                }
+
+                Version remoteVersion = new Version(strv);
                 if (curVersion.compareTo(remoteVersion) < 0) {
-                    info("&4[" + getNameAndVersion(plugin) + "] &ehas a newer version &f" + remoteVersion);
+                    if (!update){
+                        info("&4[" + getNameAndVersion(plugin) + "] &ehas a newer version &f" + remoteVersion +" &eauto update is configured to off");
+                    } else {
+                        info("&4[" + getNameAndVersion(plugin) + "] &ebeginning download of newer version &f" + remoteVersion);
+                    }
                     if (update) {
                         up = new Updater(plugin, bukkitId, file, Updater.UpdateType.DEFAULT, false);
-                        if (up.getResult() == Updater.UpdateResult.SUCCESS)
-                            info("&4" + getNameAndVersion(plugin) + " &ehas downloaded &f" + up.getLatestName().split("_v")[1]);
+                        if (up.getResult() == Updater.UpdateResult.SUCCESS){
+                            info("&4[" + getNameAndVersion(plugin) + "] &esuccessfully downloaded &f" + up.getLatestName().split("_v")[1]);
+                        }
                     }
                 }
             }

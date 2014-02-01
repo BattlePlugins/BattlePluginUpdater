@@ -4,7 +4,7 @@
     <groupId>mc.alk</groupId>
     <artifactId>PluginUpdater</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.5</version>
+    <version>1.2.5.1</version>
     <name>PluginUpdater</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,6 +45,7 @@
     </dependencies>
     <!-- How we will compile the plugin -->
     <build>
+      <finalName>${project.name}</finalName>
         <extensions>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
@@ -62,16 +63,8 @@
                 <filtering>true</filtering>
                 <directory>${basedir}</directory>
                 <includes>
-                    <include>plugin.yml</include>
-                    <include>default_files/*</include>
+                    <include>*.yml</include>
                 </includes>
-            </resource>
-            <!-- Exclude JUnit test directory -->
-            <resource>
-                <directory>src/test</directory>
-                <excludes>
-                    <exclude>**/*</exclude>
-                </excludes>
             </resource>
         </resources>
         <plugins>
