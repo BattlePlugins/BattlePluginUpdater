@@ -1,7 +1,7 @@
 package test.mc.alk.updater;
 
 import junit.framework.TestCase;
-import mc.alk.plugin.updater.v1r4.Version;
+import mc.alk.plugin.updater.v1r6.Version;
 
 public class TestVersion extends TestCase{
 

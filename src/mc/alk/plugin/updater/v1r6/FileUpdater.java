@@ -1,4 +1,4 @@
-package mc.alk.plugin.updater.v1r4;
+package mc.alk.plugin.updater.v1r6;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
