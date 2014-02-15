@@ -5,7 +5,7 @@
     <artifactId>PluginUpdater</artifactId>
     <packaging>jar</packaging>
     <version>1.3.0</version>
-    <name>PluginUpdater</name>
+    <name>BattlePluginUpdater</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -55,7 +55,7 @@
         </extensions>
         <defaultGoal>install</defaultGoal>
         <!-- Where our source directory is -->
-        <sourceDirectory>${basedir}/src/mc</sourceDirectory>
+        <sourceDirectory>${basedir}/src/java</sourceDirectory>
         <!-- Include all the resources we need -->
         <resources>
             <resource>
