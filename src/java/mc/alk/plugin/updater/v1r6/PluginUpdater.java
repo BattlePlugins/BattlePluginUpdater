@@ -112,7 +112,9 @@ public class PluginUpdater {
                 String name = up.getLatestName();
                 String strv;
                 String delim = "^v|[\\s_-]v";
-                UpdateOption remoteReleaseType = UpdateOption.fromString(up.getLatestType().name());
+                UpdateOption remoteReleaseType = up.getLatestType() != null ?
+                        UpdateOption.fromString(up.getLatestType().name()) : null;
+
                 if (remoteReleaseType == null || name == null || name.split(delim).length != 2) {
                     err("&4[" + getNameAndVersion(plugin) + "] &ccan't find a version for the plugin result was &f" + up.getResult());
                     return;
