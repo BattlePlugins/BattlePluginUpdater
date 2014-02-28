@@ -116,7 +116,8 @@ public class PluginUpdater {
                         UpdateOption.fromString(up.getLatestType().name()) : null;
 
                 if (remoteReleaseType == null || name == null || name.split(delim).length != 2) {
-                    err("&4[" + getNameAndVersion(plugin) + "] &ccan't find a version for the plugin result was &f" + up.getResult());
+                    err("&4[" + getNameAndVersion(plugin) + "] &ccan't find a version for the plugin result was &f" +
+                            up.getResult()+" &creleaseType: "+up.getLatestType());
                     return;
                 } else {
                     strv = name.split(delim)[1];
