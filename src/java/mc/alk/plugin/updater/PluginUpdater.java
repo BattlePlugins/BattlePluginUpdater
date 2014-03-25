@@ -1,4 +1,4 @@
-package mc.alk.plugin.updater.v1r6;
+package mc.alk.plugin.updater;
 
 import net.gravitydevelopment.updater.Updater;
 import org.bukkit.Bukkit;
@@ -7,6 +7,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 
 import java.io.File;
+import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.Field;
 import java.util.HashSet;
 
 /**
@@ -59,7 +61,6 @@ public class PluginUpdater {
         }
     }
 
-
     /**
      * Check for updates for a given plugin.
      * If there are updates then it will announce the newer version to the console. It will download the newer
@@ -82,6 +83,22 @@ public class PluginUpdater {
             public void run() {
                 UpdateOption update = updateOption;
                 Updater up = new Updater(plugin, bukkitId, file, Updater.UpdateType.NO_DOWNLOAD, false);
+                /// Attempt to catch errors from updater, we really don't care if the update fails that much
+                try {
+                    Field f = up.getClass().getField("thread");
+                    f.setAccessible(true);
+                    Thread t = (Thread) f.get(up);
+                    if (t != null){
+                        t.setUncaughtExceptionHandler(new UncaughtExceptionHandler(){
+                            @Override
+                            public void uncaughtException(Thread t, Throwable e) {
+                                err("&4[" + getNameAndVersion(plugin) + "] &eCouldn't check for updates. &c" + e.getMessage());
+                            }
+                        });
+                    }
+                } catch (Throwable e ){
+                    /* well that didn't work, oh well */
+                }
                 String failedMessage = null;
                 switch (up.getResult()) {
                     case DISABLED:/* admin doesn't want any updates */
