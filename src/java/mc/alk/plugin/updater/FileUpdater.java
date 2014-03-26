@@ -81,9 +81,9 @@ public class FileUpdater {
 		System.out.println("[Plugin Updater] updating " + oldFile.getName() +" from "+ oldVersion+" to " + updateVersion);
 		System.out.println("[Plugin Updater] old version backup inside of " + backupDir.getAbsolutePath());
 
-		BufferedReader br = null;
-		BufferedWriter fw = null;
-		File tempFile = null;
+		BufferedReader br;
+		BufferedWriter fw;
+		File tempFile;
 		try {
 			br = new BufferedReader(new FileReader(oldFile));
 		} catch (FileNotFoundException e) {
@@ -151,7 +151,7 @@ public class FileUpdater {
 		}
 		String nameWithoutExt = oldFile.getName().replaceFirst("[.][^.]+$", "");
 		String ext = oldFile.getName().substring(nameWithoutExt.length()+1);
-		if (ext == null || ext.isEmpty())
+		if (ext.isEmpty())
 			ext =".bk";
 		copy(oldFile, new File(backupDir+"/"+nameWithoutExt+"."+oldVersion+"."+ext));
 		return renameTo(tempFile, oldFile) ? updateVersion : null;

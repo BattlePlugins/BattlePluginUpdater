@@ -4,7 +4,7 @@
     <groupId>mc.alk</groupId>
     <artifactId>BattlePluginUpdater</artifactId>
     <packaging>jar</packaging>
-    <version>1.4</version>
+    <version>1.4.1</version>
     <name>BattlePluginUpdater</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -81,17 +81,6 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                          <relocations>
-                              <relocation>
-                                  <pattern>net.gravitydevelopment.updater</pattern>
-                                  <shadedPattern>mc.alk.net.gravitydevelopment.updater</shadedPattern>
-                              </relocation>
-                          </relocations>
-                            <artifactSet>
-                                <includes>
-                                    <include>net.gravitydevelopment.updater:updater</include>
-                                </includes>
-                            </artifactSet>
                             <!-- Specify to remove all unneeded classes -->
                             <minimizeJar>true</minimizeJar>
                         </configuration>
