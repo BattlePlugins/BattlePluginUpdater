@@ -77,39 +77,49 @@ public class Updater {
         /**
          * The updater found an update, and has readied it to be loaded the next time the server restarts/reloads.
          */
-        SUCCESS,
+        SUCCESS("The updater has found an update. It was successfully downloaded and will be loaded on server restart."),
         /**
          * The updater did not find an update, and nothing was downloaded.
          */
-        NO_UPDATE,
+        NO_UPDATE("The updater did not find an update, and nothing was downloaded."),
         /**
          * The server administrator has disabled the updating system.
          */
-        DISABLED,
+        DISABLED("The server administrator has disabled updates."),
         /**
          * The updater found an update, but was unable to download it.
          */
-        FAIL_DOWNLOAD,
+        FAIL_DOWNLOAD("The updater found an update, but was unable to download it."),
         /**
          * For some reason, the updater was unable to contact dev.bukkit.org to download the file.
          */
-        FAIL_DBO,
+        FAIL_DBO("For some reason, the updater was unable to contact dev.bukkit.org to download the file."),
         /**
          * When running the version check, the file on DBO did not contain a recognizable version.
          */
-        FAIL_NOVERSION,
+        FAIL_NOVERSION("Updater: When running the version check, the file on dev.bukkit.org did not contain a recognizable version."),
         /**
          * The id provided by the plugin running the updater was invalid and doesn't exist on DBO.
          */
-        FAIL_BADID,
+        FAIL_BADID("Updater: The id provided by the plugin was invalid and doesn't exist on dev.bukkit.org"),
         /**
          * The server administrator has improperly configured their API key in the configuration.
          */
-        FAIL_APIKEY,
+        FAIL_APIKEY("The server administrator has improperly configured their API key in the config."),
         /**
          * The updater found an update, but because of the UpdateType being set to NO_DOWNLOAD, it wasn't downloaded.
          */
-        UPDATE_AVAILABLE
+        UPDATE_AVAILABLE("The updater found an update, but it wasn't downloaded because UpdateType is configured to NO_DOWNLOAD.");
+        
+        String infoMsg;
+        
+        UpdateResult(String info) {
+            this.infoMsg = info;
+        }
+        
+        public String getInfoMessage() {
+            return this.infoMsg;
+        }
     }
 
     /**
