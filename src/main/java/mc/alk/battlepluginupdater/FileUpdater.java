@@ -1,4 +1,4 @@
-package mc.alk.plugin.updater;
+package mc.alk.battlepluginupdater;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -14,6 +14,8 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
+
+import mc.euro.version.Version;
 
 public class FileUpdater {
 

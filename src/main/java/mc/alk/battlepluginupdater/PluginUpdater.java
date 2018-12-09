@@ -1,12 +1,16 @@
-package mc.alk.plugin.updater;
-
-import org.bukkit.Bukkit;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.plugin.Plugin;
+package mc.alk.battlepluginupdater;
 
 import java.io.File;
 import java.util.HashSet;
+
+import mc.euro.version.Version;
+import mc.euro.version.VersionFactory;
+
+import org.bukkit.Bukkit;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.Plugin;
 
 /**
  * Originally a class that downloaded and updated bukkit plugins. Since the new
@@ -20,28 +24,31 @@ public class PluginUpdater {
     }
 
     /**
-     * NONE get no releases, RELEASE get only release updates, ignore
-     * beta/alpha, BETA get beta/release updates, but ignore alpha builds, ALL
-     * get all updates
+     * UpdateOption: NONE, RELEASE, BETA, ALL.
+     *
+     * NONE : Get no releases. RELEASE : Get only release updates, ignore
+     * alpha/beta builds. BETA : Get beta & release updates, but ignore alpha
+     * builds. ALL : Get all updates: Alpha, Beta, & Release builds.
+     *
      */
     public enum UpdateOption {
 
-        NONE/**
-         * get no releases
+        /**
+         * Get no releases.
          */
-        ,
-        RELEASE/**
-         * get only release updates, ignore beta/alpha
+        NONE,
+        /**
+         * Get only release updates: Ignore alpha & beta builds.
          */
-        ,
-        BETA/**
-         * get beta/release updates, but ignore alpha builds
+        RELEASE,
+        /**
+         * Get beta+release updates, but ignore alpha builds.
          */
-        ,
-        ALL/**
-         * get all updates
+        BETA,
+        /**
+         * Get all updates: Alpha, Beta, & Release builds.
          */
-        ;
+        ALL;
 
         public static UpdateOption fromString(String name) {
             try {
@@ -62,18 +69,19 @@ public class PluginUpdater {
      */
     public enum AnnounceUpdateOption {
 
-        NONE/**
+        /**
          * don't show new versions
          */
-        ,
-        CONSOLE/**
+        NONE,
+        /**
          * show only to console log on startup
          */
-        ,
-        OPS/**
-         * announce to ops on join, will only show this message once per server start
+        CONSOLE,
+        /**
+         * announce to ops on join, will only show this message once per server
+         * start
          */
-        ;
+        OPS;
 
         public static AnnounceUpdateOption fromString(String name) {
             try {
@@ -116,21 +124,27 @@ public class PluginUpdater {
 
                         update = UpdateOption.NONE;
                     // drop down
-                    case SUCCESS: /* good to go */
+                    case SUCCESS:
+                    /* good to go */
 
                     case UPDATE_AVAILABLE:
-                    case FAIL_NOVERSION: /* couldn't find a version */
+                    case FAIL_NOVERSION:
+                    /* couldn't find a version */
 
-                    case NO_UPDATE: /* no newer version found, but his check is fairly naive, keep going*/
+                    case NO_UPDATE:
+                        /* no newer version found, but his check is fairly naive, keep going*/
 
                         break;
-                    case FAIL_DOWNLOAD: /* shouldn't happen yet */ break;
+                    case FAIL_DOWNLOAD:
+                        /* shouldn't happen yet */ break;
 
-                    case FAIL_DBO: /* problem with accessing bukkit */
+                    case FAIL_DBO:
+                        /* problem with accessing bukkit */
 
                         failedMessage = "Couldn't connect to bukkit website";
                         break;
-                    case FAIL_BADID: /* bad id */
+                    case FAIL_BADID:
+                        /* bad id */
 
                         failedMessage = "The id provided was invalid or doesn't exist on DBO";
                         break;
@@ -142,42 +156,42 @@ public class PluginUpdater {
                     err("&4[" + getNameAndVersion(plugin) + "] &c" + failedMessage);
                     return;
                 }
-                Version curVersion = new Version(plugin.getDescription().getVersion());
-                String name = up.getLatestName();
-                String strv;
+                Version curVersion = VersionFactory.getPluginVersion(plugin.getName());
+                String remote = up.getLatestName();
                 String delim = "^v|[\\s_-]v";
                 UpdateOption remoteReleaseType = up.getLatestType() != null
                         ? UpdateOption.fromString(up.getLatestType().name()) : null;
 
-                if (remoteReleaseType == null || name == null || name.split(delim).length != 2) {
+                if (remoteReleaseType == null || remote == null || remote.split(delim).length != 2) {
                     err("&4[" + getNameAndVersion(plugin) + "] &ccan't find a version for the plugin result was &f"
                             + up.getResult() + " &creleaseType: " + up.getLatestType());
                     return;
-                } else {
-                    strv = name.split(delim)[1];
                 }
 
-                Version remoteVersion = new Version(strv);
-                if (curVersion.compareTo(remoteVersion) < 0) { /// We have found a newer version
+                if (curVersion.isLessThan(remote)) { /// We have found a newer version
                     /// Check to see if we want this release type
                     if (update.ordinal() >= remoteReleaseType.ordinal()) {
-                        info("&2[" + getNameAndVersion(plugin) + "] &ebeginning download of newer "
-                                + up.getLatestType().name() + "version &f" + remoteVersion);
+                        info("&2[" + getNameAndVersion(plugin)
+                                + "] &ebeginning download of newer version: &2"
+                                + remote
+                                + " &e" + up.getLatestType().name());
                         up = new Updater(plugin, bukkitId, file, Updater.UpdateType.DEFAULT, false);
                         if (up.getResult() == Updater.UpdateResult.SUCCESS) {
-                            info("&2[" + getNameAndVersion(plugin) + "] &edownloaded &f"
-                                    + up.getLatestType().name() + " &eversion &f" + up.getLatestName().split(delim)[1]);
+                            info("&2[" + getNameAndVersion(plugin)
+                                    + "] &edownloaded &2"
+                                    + remote);
                         }
                     } else if (announceOption != AnnounceUpdateOption.NONE) {
                         String[] announce = new String[]{colorChat("&2[" + getNameAndVersion(plugin) + "] &ehas a newer &f"
-                            + up.getLatestType().name() + " &eversion &f" + remoteVersion),
+                            + up.getLatestType().name() + " &eversion &f" + remote),
                             colorChat("&2[" + getNameAndVersion(plugin) + "]&5 " + up.getLatestFileLink())};
                         for (String msg : announce) {
                             info(msg);
                         }
 
                         if (announceOption == AnnounceUpdateOption.OPS) {
-                            new AnnounceOpListener(announce, plugin);
+                            Listener ll = new AnnounceOpListener(announce, plugin);
+                            Bukkit.getPluginManager().registerEvents(ll, plugin);
                         }
                     }
                 }
@@ -193,9 +207,9 @@ public class PluginUpdater {
 
         AnnounceOpListener(String[] announce, Plugin plugin) {
             this.announce = announce;
-            Bukkit.getPluginManager().registerEvents(this, plugin);
         }
 
+        @EventHandler
         public void onPlayerJoinEvent(PlayerJoinEvent event) {
             if (event.getPlayer().isOp() && !alreadyAnnounced.contains(event.getPlayer().getName())) {
                 for (String s : announce) {
