@@ -1,6 +1,8 @@
 package mc.alk.battlepluginupdater;
 
-import mc.alk.battlepluginupdater.checker.UpdateChecker;
+import mc.alk.battlepluginupdater.checker.SpigotUpdateChecker;
+import mc.alk.battlepluginupdater.checker.GitHubUpdateChecker;
+
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.json.simple.JSONArray;
@@ -47,7 +49,7 @@ import java.util.zip.ZipFile;
  * @version 2.1
  *
  * @deprecated
- * Instead, use {@link mc.alk.battlepluginupdater.checker.UpdateChecker}
+ * Instead, use {@link SpigotUpdateChecker} or {@link GitHubUpdateChecker}
  */
 public class Updater {
 

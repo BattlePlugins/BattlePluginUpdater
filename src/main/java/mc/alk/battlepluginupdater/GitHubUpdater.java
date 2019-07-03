@@ -1,6 +1,6 @@
 package mc.alk.battlepluginupdater;
 
-import mc.alk.battlepluginupdater.checker.SpigotUpdateChecker;
+import mc.alk.battlepluginupdater.checker.GitHubUpdateChecker;
 
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -18,40 +18,38 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Checks for plugin updates through spigot and the
- * {@link SpigotUpdateChecker} class.
+ * Checks for plugin updates through GitHub and the
+ * {@link GitHubUpdateChecker} class.
  *
  */
-public class SpigotUpdater {
+public class GitHubUpdater {
 
     private Plugin plugin;
-    private int pluginId;
-    private String downloadLink;
+    private String owner;
+    private String repo;
 
     private String updateFolder;
 
     /**
-     * Constructs a new SpigotUpdater instance
-     *
-     * NOTE: The download link MUST be an exact link to the jar itself.
-     * Spigot does not have support for direct download links currently, so
-     * an external jar download link (Maven, GitHub releases, etc.)
-     * will need to be specified for the downloader part to work properly.
+     * Constructs a new GitHubUpdater instance
+     * <p>
+     * NOTE: The name of the repo must be the same name as the
+     * jar for this to properly work.
      *
      * @param plugin the plugin you want to update
-     * @param pluginId the plugin's ID off of Spigot
-     * @param downloadLink the download link for the plugin
+     * @param owner  the owner of the repository
+     * @param repo   the name of the repository
      */
-    public SpigotUpdater(Plugin plugin, int pluginId, String downloadLink) {
+    public GitHubUpdater(Plugin plugin, String owner, String repo) {
         this.plugin = plugin;
-        this.pluginId = pluginId;
-        this.downloadLink = downloadLink;
+        this.owner = owner;
+        this.repo = repo;
 
         this.updateFolder = plugin.getServer().getUpdateFolder();
     }
 
     /**
-     * Updates the plugin from the latest Spigot update. Backwards compatible
+     * Updates the plugin from the latest GitHub release. Backwards compatible
      * with Gravity's plugin updater config file.
      */
     public void update() {
@@ -97,9 +95,12 @@ public class SpigotUpdater {
             return;
         }
 
-        SpigotUpdateChecker.init(plugin, pluginId).requestUpdateCheck().whenComplete((result, exception) -> {
+        GitHubUpdateChecker.init(plugin, owner, repo).requestUpdateCheck().whenComplete((result, exception) -> {
             plugin.getLogger().info(ChatColor.GOLD + "Running " + plugin.getDescription().getName() + " v" + plugin.getDescription().getVersion() + ".");
             switch (result.getReason()) {
+                case NEW_PRELEASE:
+                    plugin.getLogger().info(ChatColor.DARK_GREEN + "You are currently running the latest release build. A prerelease is available for download.");
+                    break;
                 case UP_TO_DATE:
                     plugin.getLogger().info(ChatColor.GREEN + "You are currently running the latest version.");
                     break;
@@ -117,8 +118,9 @@ public class SpigotUpdater {
                 case NEW_UPDATE:
                     plugin.getLogger().info(ChatColor.AQUA + "A new update was found: " + plugin.getDescription().getName() + " " + result.getNewestVersion());
 
+                    String downloadLink = "https://github.com/" + owner + "/" + repo + "/releases/download/" + result.getNewestVersion() + "/" + repo + ".jar";
                     File folder = new File(plugin.getDataFolder().getParent(), updateFolder);
-                    downloadFile(folder, plugin.getDescription().getName() + ".jar", result.getNewestVersion(), String.format(downloadLink, result.getNewestVersion()));
+                    downloadFile(folder, plugin.getDescription().getName() + ".jar", result.getNewestVersion(), downloadLink);
             }
         });
     }
@@ -126,9 +128,9 @@ public class SpigotUpdater {
     /**
      * Downloads a file from the specified URL into the server's update folder.
      *
-     * @param folder the updates folder location.
-     * @param file the name of the file to save it as.
-     * @param link the url of the file.
+     * @param folder  the updates folder location.
+     * @param file    the name of the file to save it as.
+     * @param link    the url of the file.
      * @param version the version of the plugin.
      */
     private void downloadFile(File folder, String file, String version, String link) {

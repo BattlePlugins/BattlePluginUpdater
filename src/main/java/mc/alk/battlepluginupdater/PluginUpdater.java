@@ -2,13 +2,11 @@ package mc.alk.battlepluginupdater;
 
 import java.io.File;
 import java.util.HashSet;
-import java.util.logging.Level;
 
 import mc.euro.version.Version;
 import mc.euro.version.VersionFactory;
 
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -16,7 +14,7 @@ import org.bukkit.plugin.Plugin;
 
 /**
  * @deprecated this class is known for causing issues with plugin downloads.
- * Instead, use {@link mc.alk.battlepluginupdater.SpigotUpdater}
+ * Instead, use {@link SpigotUpdater} or {@link GitHubUpdater}
  */
 public class PluginUpdater {
 
