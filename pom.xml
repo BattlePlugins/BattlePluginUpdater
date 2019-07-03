@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>mc.alk</groupId>
     <artifactId>BattlePluginUpdater</artifactId>
-    <version>2.1</version>
+    <version>2.1.1</version>
     <packaging>jar</packaging>
     <name>BattlePluginUpdater</name>
     <url>https://github.com/BattlePlugins/PluginUpdater</url>

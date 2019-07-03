@@ -17,6 +17,11 @@ import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+/**
+ * Checks for plugin updates through spigot and the
+ * {@link mc.alk.battlepluginupdater.checker.UpdateChecker} class.
+ *
+ */
 public class SpigotUpdater {
 
     private Plugin plugin;
@@ -25,6 +30,18 @@ public class SpigotUpdater {
 
     private String updateFolder;
 
+    /**
+     * Constructs a new SpigotUpdater instance
+     *
+     * NOTE: The download link MUST be an exact link to the jar itself.
+     * Spigot does not have support for direct download links currently, so
+     * an external jar download link (Maven, GitHub releases, etc.)
+     * will need to be specified for the downloader part to work properly.
+     *
+     * @param plugin the plugin you want to update
+     * @param pluginId the plugin's ID off of Spigot
+     * @param downloadLink the download link for the plugin
+     */
     public SpigotUpdater(Plugin plugin, int pluginId, String downloadLink) {
         this.plugin = plugin;
         this.pluginId = pluginId;
@@ -33,6 +50,10 @@ public class SpigotUpdater {
         this.updateFolder = plugin.getServer().getUpdateFolder();
     }
 
+    /**
+     * Updates the plugin from the latest Spigot update. Backwards compatible
+     * with Gravity's plugin updater config file.
+     */
     public void update() {
         File pluginFile = plugin.getDataFolder().getParentFile();
         File updaterFile = new File(pluginFile, "Updater");

@@ -105,8 +105,6 @@ public class PluginUpdater {
      * @param updateOption when should we update the plugin
      * @param announceOption who should recieve announcements about a newer
      * version
-     *
-     * @deprecated use
      */
     @Deprecated
     public static void update(final Plugin plugin, final int bukkitId, final File file,
