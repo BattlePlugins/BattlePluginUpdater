@@ -2,20 +2,21 @@ package mc.alk.battlepluginupdater;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.logging.Level;
 
 import mc.euro.version.Version;
 import mc.euro.version.VersionFactory;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Originally a class that downloaded and updated bukkit plugins. Since the new
- * bukkit rules this class has been converted into a wrapper around Gravity's
- * Updater class
+ * @deprecated this class is known for causing issues with plugin downloads.
+ * Instead, use {@link mc.alk.battlepluginupdater.SpigotUpdater}
  */
 public class PluginUpdater {
 
@@ -104,7 +105,10 @@ public class PluginUpdater {
      * @param updateOption when should we update the plugin
      * @param announceOption who should recieve announcements about a newer
      * version
+     *
+     * @deprecated use
      */
+    @Deprecated
     public static void update(final Plugin plugin, final int bukkitId, final File file,
             final UpdateOption updateOption,
             final AnnounceUpdateOption announceOption) {
