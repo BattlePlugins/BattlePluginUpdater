@@ -1,5 +1,6 @@
 package mc.alk.battlepluginupdater;
 
+import mc.alk.battlepluginupdater.checker.UpdateChecker;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.json.simple.JSONArray;
@@ -44,6 +45,9 @@ import java.util.zip.ZipFile;
  *
  * @author Gravity
  * @version 2.1
+ *
+ * @deprecated
+ * Instead, use {@link mc.alk.battlepluginupdater.checker.UpdateChecker}
  */
 public class Updater {
 
